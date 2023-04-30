@@ -15,4 +15,3 @@ int main(int argc, char **argv) {
 "von 1 bis 100  beträgt %d.\n", collatz_orbit(0, 0));
     return 0;
 }
-
