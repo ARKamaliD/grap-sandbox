@@ -1,17 +1,35 @@
+#include <stdio.h>
 #include <stdint.h>
-#include  <stdio.h>
 
 uint64_t collatz_orbit(uint64_t n, uint64_t k) {
-    int j = -42;
-    return j; // FIXME!
+    uint64_t i;
+    for (i = 0; i < k; ++i) {
+//        printf("k=  %lu    ,   n= %lu\n", i, n);
+        if (n % 2 == 0) {
+            n = n / 2;
+        } else {
+            if (n > (UINT64_MAX - 1) / 3) return 0;
+            else n = 3 * n + 1;
+        }
+        if (i + 1 < k && n == 1)
+            break;
+    }
+    if (i + 1 < k) {
+        switch ((k - (i + 1)) % 3) {
+            case 0:
+                return 1;
+            case 1:
+                return 4;
+            case 2:
+                return 2;
+        }
+    }
+    return n; // FIXED!
 }
 
-int main(int argc, char **argv) {
-    int sum = 0;
-    for (int i = 1; i <= 500; i++) {
-        sum += i;
-    }
-    printf("Die  Summe  aller  natürlichen  Zahlen" \
-"von 1 bis 100  beträgt %d.\n", collatz_orbit(0, 0));
+int main(void) {
+    uint64_t n = 9223372036854775808U;
+    uint64_t k = 9223372036854775808U;
+    printf("k=  %lu    ,   result= %lu\n", k, collatz_orbit(n, k));
     return 0;
 }
