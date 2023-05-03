@@ -1,1 +1,1 @@
-#add_executable(gauss gauss.c)
+add_executable(gcd ./gcd/gcd.c)
