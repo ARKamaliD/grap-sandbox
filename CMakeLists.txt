@@ -5,4 +5,5 @@ set(CMAKE_C_STANDARD 17)
 
 #add_subdirectory(./w01)
 #add_subdirectory(./w02)
-add_subdirectory(./w03)
+#add_subdirectory(./w03)
+add_subdirectory(./w04)
