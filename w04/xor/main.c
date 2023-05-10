@@ -10,12 +10,6 @@ int main(int argc, char **argv) {
     }
 
     int key = atoi(argv[2]);
-/*
-    xor_cipher(argv[1], key);
-
-    // Why would "printf(argv[1]);" be a VERY BAD idea?
-    printf("%s\n", argv[1]);
-*/
     xor_cipher(argv[1], key);
 
     // Why would "printf(argv[1]);" be a VERY BAD idea?
