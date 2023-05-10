@@ -16,7 +16,7 @@ double listavg(const struct node *list) {
     return list ? listavgrec(list, 0, 0.0) : 0.0;
 }
 
-
+// My first solution
 /*
 double listavg(const struct node *list) {
     // DONE: your implementation :)
@@ -30,6 +30,26 @@ double listavg(const struct node *list) {
         }
         return sum / size;
     }
+}
+*/
+
+// Musterlösung
+/*
+struct node {
+    struct node *next;
+    double val;
+};
+
+double listavg(const struct node *list) {
+    if (!list) {
+        return 0.0;
+    }
+    double sum = 0;
+    unsigned long n = 0;
+    do {
+        sum += list->val;
+    } while (++n, list = list->next);
+    return sum / n;
 }
 */
 
