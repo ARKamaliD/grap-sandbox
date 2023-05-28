@@ -20,20 +20,22 @@ static void print_array(long n, float *array) {
 }
 
 float sdot(size_t n, const float x[n], const float y[n]) {
-    __m128 valpha = _mm_load1_ps(&alpha);
+    __m128 temp = _mm_setzero_ps();
     for (size_t i = 0; i < (n - (n % 4)); i += 4) {
         __m128 vx = _mm_loadu_ps(x + i);
         __m128 vy = _mm_loadu_ps(y + i);
 
-        vy = _mm_add_ps(_mm_mul_ps(valpha, vx), vy);
-
-        _mm_storeu_ps(y + i, vy);
+        temp = _mm_add_ps(_mm_mul_ps(vx, vy), temp);
     }
+
+    float result[4];
+    _mm_storeu_ps(result, temp);
 
     for (size_t i = (n - (n % 4)); i < n; i++) {
-        y[i] = alpha * x[i] + y[i];
+        result[0] = result[0] + (x[i] * y[i]);
     }
-    return 0.0f;
+
+    return (result[0] + result[1]) + (result[2] + result[3]);
 }
 
 int main(int argc, char **argv) {
