@@ -32,7 +32,7 @@ float sdot(size_t n, const float x[n], const float y[n]) {
     _mm_storeu_ps(result, temp);
 
     for (size_t i = (n - (n % 4)); i < n; i++) {
-        result[0] = result[0] + (x[i] * y[i]);
+        result[i%4] += + (x[i] * y[i]);
     }
 
     return (result[0] + result[1]) + (result[2] + result[3]);
