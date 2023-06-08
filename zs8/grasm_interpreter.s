@@ -161,7 +161,7 @@ dispatch:
     je ecall_rX
 
     # No Opcode matched - error -1
-    mov rax, -1
+    mov rbx, -1
 	jmp error
 
 nop:
@@ -604,10 +604,8 @@ error:
     # Set error code to rbx and end
     cmp rbx, -1
     je error_skip_rax
-    mov rax, rbx
+    mov rbx, rax
 error_skip_rax:
-	mov qword ptr [r12 + 8], rbx  # state->ac = rbx
-	mov qword ptr [r12], rdi    # state->ip = rdi
 	jmp end
 
 stop:
