@@ -302,10 +302,21 @@ sub_ac_rX:
     jmp execute_loop
 
 sub_rX_rY:
-    # TODO: implement
+    # rX -= rY
+    movzx r15, byte ptr [r13 + rdi] # r15 = XY
+    add rdi, 1
+	mov rax, r15 # rax = XY
+    and r15, 0xF0 # r15 = X0
+    shr r15, 4 #r15 = 0X
+    cmp r15b, 0x07
+    jg error_out_of_bound
+    and rax, 0x0F #rax = 0Y
+    cmp rax, 0x07
+    jg error_out_of_bound
+    mov rax, qword ptr [r12 + 16 + rax*8]  # rax = state->rY
+    sub qword ptr [r12 + 16 + r15*8], rax  # state->rX -= rax
     mov qword ptr [r12], rdi    # state->ip = rdi
-    movzx rbx, byte ptr [r13 + rdi - 1]
-    jmp error
+    jmp execute_loop
 
 mul_ac_imm:
     # ac *= imm
@@ -317,10 +328,18 @@ mul_ac_imm:
     jmp execute_loop
 
 mul_rX_imm:
-    # TODO: implement
+    # rX *= imm
+    movzx r15, byte ptr [r13 + rdi] # r15 = 0X
+    add rdi, 1
+    and r15, 0x0F # r15 = X
+    cmp r15b, 0x07
+    jg error_out_of_bound
+    mov rax, qword ptr [r13 + rdi] # rax = imm uint64_t
+	add rdi, 8
+    mul qword ptr [r12 + 16 + r15*8] # rdx:rax = rax * state->rX
+    mov qword ptr [r12 + 16 + r15*8], rax  # state->rX = rax
     mov qword ptr [r12], rdi    # state->ip = rdi
-    movzx rbx, byte ptr [r13 + rdi - 1]
-    jmp error
+    jmp execute_loop
 
 mul_ac_rX:
     # ac *= rX
@@ -354,88 +373,186 @@ mul_rX_rY:
     jmp execute_loop
 
 xchg_ac_rX:
-    # TODO: implement
+    # tmp = ac; ac = rX; rX = tmp
+    movzx r15, byte ptr [r13 + rdi] # r15 = 0X
+    add rdi, 1
+    and r15, 0x0F # r15 = X
+    cmp r15b, 0x07
+    jg error_out_of_bound
+	mov rax, qword ptr [r12 + 16 + r15*8]  # rax = state->rX
+    mov rdx, qword ptr [r12 + 8] # rdx = state->ac
+    mov qword ptr [r12 + 8], rax  # state->ac = rax
+    mov qword ptr [r12 + 16 + r15*8], rdx  # state->rX = rdx
     mov qword ptr [r12], rdi    # state->ip = rdi
-    movzx rbx, byte ptr [r13 + rdi - 1]
-    jmp error
+    jmp execute_loop
 
 xchg_rX_rY:
-    # TODO: implement
+    # tmp = rX; rX = rY; rY = tmp
+    movzx r15, byte ptr [r13 + rdi] # r15 = XY
+    add rdi, 1
+	mov rax, r15 # rax = XY
+    and r15, 0xF0 # r15 = X0
+    shr r15, 4 #r15 = 0X
+    cmp r15b, 0x07
+    jg error_out_of_bound
+    and rax, 0x0F #rax = 0Y
+    cmp rax, 0x07
+    jg error_out_of_bound
+    mov rdx, qword ptr [r12 + 16 + r15*8]  # rdx = state->rX
+    xchg rdx, qword ptr [r12 + 16 + rax*8]  # rdx <=> state->rY
+    mov qword ptr [r12 + 16 + r15*8], rdx  # state->rX = rdx
     mov qword ptr [r12], rdi    # state->ip = rdi
-    movzx rbx, byte ptr [r13 + rdi - 1]
-    jmp error
+    jmp execute_loop
 
 and_ac_imm:
-    # TODO: implement
+    # ac &= imm
+    mov rax, qword ptr [r13 + rdi] # rax = imm uint64_t
+    add rdi, 8
+    and qword ptr [r12 + 8], rax  # state->ac &= rax
     mov qword ptr [r12], rdi    # state->ip = rdi
-    movzx rbx, byte ptr [r13 + rdi - 1]
-    jmp error
+    jmp execute_loop
 
 and_rX_imm:
-    # TODO: implement
+    # rX &= imm
+    movzx r15, byte ptr [r13 + rdi] # r15 = 0X
+    add rdi, 1
+    and r15, 0x0F # r15 = X
+    cmp r15b, 0x07
+    jg error_out_of_bound
+    mov rax, qword ptr [r13 + rdi] # rax = imm uint64_t
+	add rdi, 8
+    and qword ptr [r12 + 16 + r15*8], rax  # state->rX &= rax
     mov qword ptr [r12], rdi    # state->ip = rdi
-    movzx rbx, byte ptr [r13 + rdi - 1]
-    jmp error
+    jmp execute_loop
 
 and_ac_rX:
-    # TODO: implement
+    # ac &= rX
+    movzx r15, byte ptr [r13 + rdi] # r15 = 0X
+    add rdi, 1
+    and r15, 0x0F # r15 = X
+    cmp r15b, 0x07
+    jg error_out_of_bound
+	mov rax, qword ptr [r12 + 16 + r15*8]  # rax = state->rX
+    and qword ptr [r12 + 8], rax  # state->ac &= rax
     mov qword ptr [r12], rdi    # state->ip = rdi
-    movzx rbx, byte ptr [r13 + rdi - 1]
-    jmp error
+    jmp execute_loop
 
 and_rX_rY:
-    # TODO: implement
+    # rX &= rY
+    movzx r15, byte ptr [r13 + rdi] # r15 = XY
+    add rdi, 1
+	mov rax, r15 # rax = XY
+    and r15, 0xF0 # r15 = X0
+    shr r15, 4 #r15 = 0X
+    cmp r15b, 0x07
+    jg error_out_of_bound
+    and rax, 0x0F #rax = 0Y
+    cmp rax, 0x07
+    jg error_out_of_bound
+    mov rax, qword ptr [r12 + 16 + rax*8]  # rax = state->rY
+    and qword ptr [r12 + 16 + r15*8], rax  # state->rX &= rax
     mov qword ptr [r12], rdi    # state->ip = rdi
-    movzx rbx, byte ptr [r13 + rdi - 1]
-    jmp error
+    jmp execute_loop
 
 or_ac_imm:
-    # TODO: implement
+    # ac |= imm
+    mov rax, qword ptr [r13 + rdi] # rax = imm uint64_t
+    add rdi, 8
+    or qword ptr [r12 + 8], rax  # state->ac |= rax
     mov qword ptr [r12], rdi    # state->ip = rdi
-    movzx rbx, byte ptr [r13 + rdi - 1]
-    jmp error
+    jmp execute_loop
 
 or_rX_imm:
-    # TODO: implement
+    # rX |= imm
+    movzx r15, byte ptr [r13 + rdi] # r15 = 0X
+    add rdi, 1
+    and r15, 0x0F # r15 = X
+    cmp r15b, 0x07
+    jg error_out_of_bound
+    mov rax, qword ptr [r13 + rdi] # rax = imm uint64_t
+	add rdi, 8
+    or qword ptr [r12 + 16 + r15*8], rax  # state->rX |= rax
     mov qword ptr [r12], rdi    # state->ip = rdi
-    movzx rbx, byte ptr [r13 + rdi - 1]
-    jmp error
+    jmp execute_loop
 
 or_ac_rX:
-    # TODO: implement
+    # ac |= rX
+    movzx r15, byte ptr [r13 + rdi] # r15 = 0X
+    add rdi, 1
+    and r15, 0x0F # r15 = X
+    cmp r15b, 0x07
+    jg error_out_of_bound
+	mov rax, qword ptr [r12 + 16 + r15*8]  # rax = state->rX
+    or qword ptr [r12 + 8], rax  # state->ac |= rax
     mov qword ptr [r12], rdi    # state->ip = rdi
-    movzx rbx, byte ptr [r13 + rdi - 1]
-    jmp error
+    jmp execute_loop
 
 or_rX_rY:
-    # TODO: implement
+    # rX |= rY
+    movzx r15, byte ptr [r13 + rdi] # r15 = XY
+    add rdi, 1
+	mov rax, r15 # rax = XY
+    and r15, 0xF0 # r15 = X0
+    shr r15, 4 #r15 = 0X
+    cmp r15b, 0x07
+    jg error_out_of_bound
+    and rax, 0x0F #rax = 0Y
+    cmp rax, 0x07
+    jg error_out_of_bound
+    mov rax, qword ptr [r12 + 16 + rax*8]  # rax = state->rY
+    or qword ptr [r12 + 16 + r15*8], rax  # state->rX |= rax
     mov qword ptr [r12], rdi    # state->ip = rdi
-    movzx rbx, byte ptr [r13 + rdi - 1]
-    jmp error
+    jmp execute_loop
 
 xor_ac_imm:
-    # TODO: implement
+    # ac ^= imm
+    mov rax, qword ptr [r13 + rdi] # rax = imm uint64_t
+    add rdi, 8
+    xor qword ptr [r12 + 8], rax  # state->ac ^= rax
     mov qword ptr [r12], rdi    # state->ip = rdi
-    movzx rbx, byte ptr [r13 + rdi - 1]
-    jmp error
+    jmp execute_loop
 
 xor_rX_imm:
-    # TODO: implement
+    # rX ^= imm
+    movzx r15, byte ptr [r13 + rdi] # r15 = 0X
+    add rdi, 1
+    and r15, 0x0F # r15 = X
+    cmp r15b, 0x07
+    jg error_out_of_bound
+    mov rax, qword ptr [r13 + rdi] # rax = imm uint64_t
+	add rdi, 8
+    xor qword ptr [r12 + 16 + r15*8], rax  # state->rX ^= rax
     mov qword ptr [r12], rdi    # state->ip = rdi
-    movzx rbx, byte ptr [r13 + rdi - 1]
-    jmp error
+    jmp execute_loop
 
 xor_ac_rX:
-    # TODO: implement
+    # ac ^= rX
+    movzx r15, byte ptr [r13 + rdi] # r15 = 0X
+    add rdi, 1
+    and r15, 0x0F # r15 = X
+    cmp r15b, 0x07
+    jg error_out_of_bound
+	mov rax, qword ptr [r12 + 16 + r15*8]  # rax = state->rX
+    xor qword ptr [r12 + 8], rax  # state->ac ^= rax
     mov qword ptr [r12], rdi    # state->ip = rdi
-    movzx rbx, byte ptr [r13 + rdi - 1]
-    jmp error
+    jmp execute_loop
 
 xor_rX_rY:
-    # TODO: implement
+    # rX ^= rY
+    movzx r15, byte ptr [r13 + rdi] # r15 = XY
+    add rdi, 1
+	mov rax, r15 # rax = XY
+    and r15, 0xF0 # r15 = X0
+    shr r15, 4 #r15 = 0X
+    cmp r15b, 0x07
+    jg error_out_of_bound
+    and rax, 0x0F #rax = 0Y
+    cmp rax, 0x07
+    jg error_out_of_bound
+    mov rax, qword ptr [r12 + 16 + rax*8]  # rax = state->rY
+    xor qword ptr [r12 + 16 + r15*8], rax  # state->rX ^= rax
     mov qword ptr [r12], rdi    # state->ip = rdi
-    movzx rbx, byte ptr [r13 + rdi - 1]
-    jmp error
+    jmp execute_loop
 
 not_ac:
     # TODO: implement
