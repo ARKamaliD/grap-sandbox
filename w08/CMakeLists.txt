@@ -1,0 +1,1 @@
+add_executable(outerprod outerprod/outerprod.c outerprod/outerprod_helpers.c)
