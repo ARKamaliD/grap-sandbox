@@ -278,6 +278,11 @@ sub_ac_imm:
 
 sub_rX_imm:
     # rX -= imm
+   	mov rax, r14
+    sub rax, rdi
+    sub rax, 9
+    cmp rax, 0
+    jl error_opcode
     movzx r15, byte ptr [r13 + rdi] # r15 = 0X
     add rdi, 1
     and r15, 0x0F # r15 = X
@@ -774,10 +779,22 @@ ld_ac_rx:
     jmp error
 
 ld_rX_rY:
-    # TODO: implement
+    # rX = [rY]
+    movzx r15, byte ptr [r13 + rdi] # r15 = XY
+    add rdi, 1
+	mov rax, r15 # rax = XY
+    and r15, 0xF0 # r15 = X0
+    shr r15, 4 #r15 = 0X
+    cmp r15b, 0x07
+    jg error_out_of_bound
+    and rax, 0x0F #rax = 0Y
+    cmp rax, 0x07
+    jg error_out_of_bound
+    mov rax, qword ptr [r12 + 16 + rax*8]  # rax = state->rY
+    mov rax, qword ptr [rax] # rax = [rax]
+    mov qword ptr [r12 + 16 + r15*8], rax  # state->rX += rax
     mov qword ptr [r12], rdi    # state->ip = rdi
-    movzx rbx, byte ptr [r13 + rdi - 1]
-    jmp error
+    jmp execute_loop
 
 st_imm_ac:
     # TODO: implement
@@ -819,7 +836,7 @@ gr_imm:
     # ip = ip + <imm int16_t>, imm int16_t
     mov ax, word ptr [r13 + rdi] # ax = imm int16_t
     add rdi, 2
-    adc word ptr [r12], ax    # state->ip = ip + ax
+    add word ptr [r12], ax    # state->ip = ip + ax
     jmp execute_loop
 
 jz_ac_imm:
@@ -841,22 +858,35 @@ jrz_imm:
     jne jrz_imm_skip
     mov ax, word ptr [r13 + rdi] # ax = imm int16_t
     add rdi, 2
-    adc word ptr [r12], ax    # state->ip = ip + ax
+    add word ptr [r12], ax    # state->ip = ip + ax
     jmp execute_loop
 jrz_imm_skip:
     add qword ptr [r12], 0x3    # state->ip = ip + sizeof(jrz)
     jmp execute_loop
 
 ecall_imm:
-    # TODO: implement
+    # ac = <imm>(r0, .., r5)
+    mov rax, qword ptr [r13 + rdi] # rax = imm uint64_t
+    add rdi, 8
     mov qword ptr [r12], rdi    # state->ip = rdi
-    movzx rbx, byte ptr [r13 + rdi - 1]
-    jmp error
+    mov rdi, qword ptr [r12 + 16 + 0*8]  # rdi = state->r0
+    mov rsi, qword ptr [r12 + 16 + 1*8]  # rsi = state->r1
+    mov rdx, qword ptr [r12 + 16 + 2*8]  # rdx = state->r2
+    mov rcx, qword ptr [r12 + 16 + 3*8]  # rcx = state->r3
+    mov r8, qword ptr [r12 + 16 + 4*8]  # r8 = state->r4
+    mov r9, qword ptr [r12 + 16 + 5*8]  # r9 = state->r5
+	call rax
+    mov qword ptr [r12 + 8], rax  # state->ac = rax
+    jmp execute_loop
 
 ecall_rX:
     # TODO: implement
     mov qword ptr [r12], rdi    # state->ip = rdi
     movzx rbx, byte ptr [r13 + rdi - 1]
+    jmp error
+
+error_opcode:
+	mov rax,-1
     jmp error
 
 error_out_of_bound:
