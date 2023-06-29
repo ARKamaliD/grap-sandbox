@@ -146,7 +146,7 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    const char *fn_name = "fn_x";
+    const char *fn_name = argv[optind];
     Func fn = get_fn(fn_name);
     if (!fn) {
         fprintf(stderr, "%s: Invalid value for 'fn' -- %s\n", progname,
